@@ -1,6 +1,3 @@
-#Code as of 4/23/2020
-
-
 library(tidyverse)
 library(codyn)
 library(rsq)
@@ -69,8 +66,6 @@ data1<-data%>%
          Water_wghtd=Water_man*num_plants_water2)%>%
   select(Nb, Block, House_ID, Family, Genus, Front.Back, Water_wghtd, Water_man,num_plants_water, num_plants_water2, num_plants, Native_plants, Native_bin, num_flowers, color1, color2, TotalFlower_area, flower_size, Inf.Type, Symmetry, flowertype, photo_ID, notes)
 
-write.csv(data1, file="data1.csv")
-
 flower_sums_house<-data1%>%
   ungroup()%>%
   group_by(Nb, House_ID)%>%
@@ -85,8 +80,6 @@ flower_sums_house<-data1%>%
             sum_Water_wghtd=sum(Water_wghtd, na.rm= any(!is.na(Water_wghtd))))%>% 
   mutate(water_wghtd_avg=sum_Water_wghtd/total_plants_water)
 #remove NAs from area calculations b/c some photos missing#
-
-write.csv(flower_sums_house, file="flower_sums_house.csv")
 
 flower_sums<-flower_sums_house%>%
   ungroup()%>%
@@ -113,8 +106,6 @@ rich_house<-community_structure(rich_calc.1, abundance.var= "FaGe.sum", replicat
   group_by(House_ID)%>%
   summarize(Flow.rich=mean(richness),
             Flow.even=mean(Evar, na.rm=T))
-
-write.csv(rich_house, file="rich_house.csv")
 
 rich.1<-community_structure(rich_calc.1, abundance.var= "FaGe.sum", replicate.var="House_ID")%>%
   left_join(nb_link)%>%
@@ -146,9 +137,6 @@ cat_count_house<-Cat_data%>%
             sd.num=ABcount(sing.doub),
             genera.num=ABcount(genera))
 
-write.csv(cat_count_house, file="cat_count_house.csv")
-
-
 cat_count<-Cat_data%>%
   group_by(Nb, Block, House_ID)%>%
   summarize(inflo.num=ABcount(inflor),
@@ -165,9 +153,12 @@ cat_count<-Cat_data%>%
             sd.cols=sd(color.num),
             n.cols=length(color.num),
             sd.FaGe=sd(genera.num),
-            n.FaGe=length(genera.num))%>%
+            n.FaGe=length(genera.num),
+            sd.inflor=sd(inflo.num),
+            n.inflor=length(inflo.num))%>%
   mutate(se.cols=sd.cols/sqrt(n.cols),
-         se.FaGe=sd.FaGe/sqrt(n.FaGe))%>%
+         se.FaGe=sd.FaGe/sqrt(n.FaGe),
+         se.inflor=sd.inflor/sqrt(n.inflor))%>%
   left_join(nb_info)
 
 
@@ -182,8 +173,6 @@ lawn2<-subset(lawn, Species!="NO LAWN"&Species!="Not collected")%>%
          AveCovB = (B1+B2)/2)%>%
   select(-N.fixer, -Veg_Garden, -VG, -notes) %>% 
   left_join(Native_Lawn)
-
-write.csv(lawn2, file="lawn2.csv")
 
 lawn2$AveCovAll<-rowMeans(lawn2[c("AveCovB", "AveCovF")], na.rm = T)
 
@@ -267,7 +256,7 @@ gg.A902.Inc<-ggplot(data = A902.Med_Inc, aes(x=Med_Inc_short, y = mean.A902))+
         axis.title.y = element_text(color="black", size=15),
         axis.text.x = element_text(color="black",size=15), 
         axis.text.y = element_text(color="black",size=20))+
-  annotate("text", x=58, y=0.3, label="r = 0.249, p = 0.517", size=4.5)
+  annotate("text", x=58, y=0.3, label="r = 0.321, p = 0.398", size=4.5)
 
 #A8 plot - Biodiversity vs Income - 1C
 A8.Med_Inc<-Survey_parcel%>%
@@ -296,7 +285,7 @@ gg.A8.Inc<-ggplot(data = A8.Med_Inc, aes(x=Med_Inc_short, y = mean.A8))+
         axis.title.y = element_text(color="black", size=15),
         axis.text.x = element_text(color="black",size=15), 
         axis.text.y = element_text(color="black",size=20))+
-  annotate("text", x=58, y=0.3, label="r = -0.213, p = 0.582", size=4.5)
+  annotate("text", x=58, y=0.3, label="r = -0.140, p = 0.719", size=4.5)
 
 #Fig1- left off here messing w/fig 1 panel spacing
 ggdraw()+
@@ -305,7 +294,7 @@ ggdraw()+
   draw_plot(gg.A8.Inc, x=0.045, y=0, width=.44, height=.5)+
   draw_plot(gg.A902.Inc, x=.55, y=0, width=.44, height=.5)+
   draw_plot_label(label= c("A","B","C","D"), size=19,
-                  x= c(0.01, 0.51, 0.01, 0.51), y = c(1, 1, 0.5,0.5))
+                  x= c(0.01, 0.49, 0.01, 0.49), y = c(1, 1, 0.5,0.5))
 
 
 #####################################################################
@@ -614,13 +603,13 @@ col.gen<-ggplot(data= cat_count, aes(x = Mcols, y = MFaGe))+
 
 cor.test(cat_count$Mcols,cat_count$MFaGe, method="pearson")
 
-#gen.inc
-gen.inc<-ggplot(data= cat_count, aes(x = Med_Inc_short, y = MFaGe))+
+#inflo.inc
+inflo.inc<-ggplot(data= cat_count, aes(x = Med_Inc_short, y = Minflor))+
   geom_point(size=3)+
-  geom_errorbar(aes(ymin=MFaGe-se.FaGe, ymax=MFaGe+se.FaGe), width=0)+
+  geom_errorbar(aes(ymin=Minflor-se.inflor, ymax=Minflor+se.inflor), width=0)+
   xlab("Median Neighborhood Income (USD thousands)")+
-  ylab("Flowering Plant Genus Richness")+
-  ylim(0,15)+
+  ylab("Number of Inflorescence Types")+
+  scale_y_continuous(limits=c(0,6), breaks=c(0,2,4,6))+ 
   geom_smooth(method="lm", se=F, color="black")+
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -628,8 +617,7 @@ gen.inc<-ggplot(data= cat_count, aes(x = Med_Inc_short, y = MFaGe))+
         axis.title.y = element_text(color="black", size=15),
         axis.text.x = element_text(color="black",size=15), 
         axis.text.y = element_text(color="black",size=15))+
-  annotate("text", x=63, y=14.6, label=expression(paste("Partial ",R^2," = 0.701, p = 0.019")), size=4.5)
-
+  annotate("text", x=63, y=5.6, label=expression(paste("Partial ",R^2," = 0.738, p = 0.013")), size=4.5)
 
 
 #pie
@@ -674,7 +662,7 @@ pie<-ggplot(pie.across, aes(x = nb_inc, y=Sum_colarea, fill=value))+
 ggdraw()+
   draw_plot(inc.col, x=0.045, y=.5, width=.44, height=.5)+
   draw_plot(col.gen, x=.55, y=.5, width=.44, height=.5)+
-  draw_plot(gen.inc, x=0.045, y=0, width=.44, height=.5)+
+  draw_plot(inflo.inc, x=0.045, y=0, width=.44, height=.5)+
   draw_plot(pie, x=.535, y=0, width=.475, height=.5)+
   draw_plot_label(label= c("A","B","C","D"), size=19,
                   x= c(0.01, 0.53, 0.01, 0.53), y = c(1, 1, 0.5,0.5))
@@ -948,6 +936,16 @@ rsq.partial(m1, adj=F)
 summary(m1<-lm(Mcols~Med_Inc+Yr_Built.x+Ave_Elev, data=cat_count))
 rsq.partial(m1, adj=F)
 
+###Number colors with nb 252 removed
+colorstest_252<-cat_count %>%
+  filter(Nb!="252")
+
+summary(m1<-lm(Mcols~Med_Inc+Yr_Built.x+Ave_Elev, data=colorstest_252))
+rsq.partial(m1, adj=F)
+
+cor.test(formula = ~ Mcols+Med_Inc,
+         data = colorstest_252)
+
 #number inflorescences
 #stepAIC(lm(Minflor~Med_Inc+Yr_Built.x+Ave_Elev, data= cat_count))
 summary(m1<-lm(Minflor~Med_Inc+Yr_Built.x+Ave_Elev, data=cat_count))
@@ -1089,3 +1087,44 @@ Type.L_perhouse<-Lawn_Summaries %>%
 
 write.csv(Type.L_perhouse, file="Type.L_perhouse")
 
+#Pay for lawn care co. vs. inc
+nbcut_info<-nb_info%>%
+  select(Nb, Med_Inc, Yr_Built.x, Ave_Elev, nb_inc)
+
+D1.Med_Inc<-Survey_parcel%>%
+  select(Nb, House_ID, D1) %>% 
+  filter(House_ID!="110_2_1") %>% #removed this house b/c they didn't answer A8/half the survey
+  mutate(D1=as.numeric(as.character(D1)))%>%
+  group_by(Nb) %>% 
+  summarize(mean.D1=mean(D1, na.rm=T),
+            sd=sd(D1, na.rm=T),
+            n=length(D1[!is.na(D1)]))%>%
+  mutate(se=sd/sqrt(n)) %>% 
+  left_join(nbcut_info)
+
+cor.test(formula = ~ mean.D1+Med_Inc,
+         data = D1.Med_Inc)
+
+#Importance of variety and biodiversity
+Ivar<-Homeowner_Survey14 %>% 
+  group_by(A7) %>% 
+  summarize(num_resp=length(A7)) %>% 
+  mutate(percent_resp=num_resp/275*100)#denominator is 275 instead of 278 b/c 3 surveys were blank for this question
+
+Ibiodiv<-Homeowner_Survey14 %>% 
+  group_by(A8) %>% 
+  summarize(num_resp=length(A8)) %>% 
+  mutate(percent_resp=num_resp/275*100)#denominator is 275 instead of 278 b/c 3 surveys were blank for this question
+
+#Homeowners
+Own_E1<-Homeowner_Survey14 %>% 
+  group_by(E1) %>% 
+  summarize(num_resp=length(E1)) %>% 
+  mutate(percent_resp=num_resp/272*100)
+
+#Importance of having a lawn (2013 interviews)
+lawn_importance<-read.csv('1g_important_L_COPY.csv') %>% 
+  group_by(Importance) %>% 
+  summarize(num_resp=length(Importance)) %>% 
+  mutate(percent_resp=num_resp/30*100)
+  
